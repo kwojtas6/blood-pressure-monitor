@@ -10,6 +10,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { Measurement } from '../types'
+import { SERIES } from '../utils/series'
 
 interface BloodPressureChartProps {
   /** Measurements already scoped to the window to chart (e.g. by date range). */
@@ -17,25 +18,6 @@ interface BloodPressureChartProps {
   /** Chart area height in pixels. Defaults to 260 (used on the `/chart` route); the dashboard passes a smaller value. */
   height?: number
 }
-
-interface SeriesDefinition {
-  key: 'systolic' | 'diastolic' | 'pulse'
-  label: string
-  color: string
-  unit: string
-}
-
-/**
- * Line colors are chosen for mutual distinguishability (not just hue —
- * lightness/saturation differ too) since color is also used as the sole
- * visual distinguisher between series on the chart; the legend and the
- * hidden data table below give a non-color-dependent way to read the data.
- */
-const SERIES: SeriesDefinition[] = [
-  { key: 'systolic', label: 'Systolic', color: '#DC2626', unit: 'mmHg' },
-  { key: 'diastolic', label: 'Diastolic', color: '#287B68', unit: 'mmHg' },
-  { key: 'pulse', label: 'Pulse', color: '#6366F1', unit: 'bpm' },
-]
 
 interface ChartPoint {
   timestamp: number

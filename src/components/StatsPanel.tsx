@@ -1,36 +1,9 @@
 import type { Measurement } from '../types'
+import { computeStats, METRICS } from '../utils/stats'
 
 interface StatsPanelProps {
   /** Measurements already scoped to the window to summarize (e.g. by date range). */
   measurements: Measurement[]
-}
-
-interface MetricDefinition {
-  key: 'systolic' | 'diastolic' | 'pulse'
-  label: string
-  unit: string
-}
-
-const METRICS: MetricDefinition[] = [
-  { key: 'systolic', label: 'Systolic', unit: 'mmHg' },
-  { key: 'diastolic', label: 'Diastolic', unit: 'mmHg' },
-  { key: 'pulse', label: 'Pulse', unit: 'bpm' },
-]
-
-interface MetricStats {
-  mean: number
-  min: number
-  max: number
-}
-
-function computeStats(values: number[]): MetricStats | null {
-  if (values.length === 0) return null
-  const sum = values.reduce((total, value) => total + value, 0)
-  return {
-    mean: sum / values.length,
-    min: Math.min(...values),
-    max: Math.max(...values),
-  }
 }
 
 /**
