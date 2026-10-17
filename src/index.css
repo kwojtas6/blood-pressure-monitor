@@ -5,11 +5,26 @@
     'Segoe UI', sans-serif;
 
   --color-ink: #1b302b;
-  --color-muted: #788883;
-  --color-accent: #287b68;
+  /* Darkened from the original #788883 (3.7:1 on white — fails WCAG AA's
+     4.5:1 for normal text, and this token is used for normal-size body
+     text throughout: timestamps, helper text, nav labels). #5a6b67 keeps
+     the same muted gray-green hue at 5.6:1 on white / 5.2:1 on
+     --color-background (task 6 accessibility pass). */
+  --color-muted: #5a6b67;
+  /* Darkened from #287b68 (4.45:1 as nav-active text on --color-accent-soft
+     — just under the 4.5:1 text threshold) to #226b5a (5.5:1 on
+     accent-soft, 6.3:1 on white; button text stays white-on-accent, which
+     only improves). */
+  --color-accent: #226b5a;
   --color-accent-soft: #e7f2ef;
   --color-surface: #ffffff;
   --color-border: #e3ebe8;
+  /* Stronger border for interactive control boundaries (inputs, selects,
+     secondary buttons) where the border is the only cue to the control's
+     edges — WCAG 1.4.11 non-text contrast needs 3:1; the default
+     --color-border is ~1.2:1 on white and is kept as-is for purely
+     decorative card/table dividers. */
+  --color-border-strong: #879693;
   --color-background: #f4f7f6;
 }
 

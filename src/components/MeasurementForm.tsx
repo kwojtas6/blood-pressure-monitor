@@ -352,7 +352,7 @@ function MeasurementFormFields({
             name="note"
             maxLength={NOTE_MAX_LENGTH}
             rows={3}
-            className="mt-1 flex w-full rounded-md border border-border bg-surface px-3 py-2 text-base text-ink shadow-xs outline-none placeholder:text-muted focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 aria-invalid:border-red-500 md:text-sm"
+            className="mt-1 flex w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-base text-ink shadow-xs outline-none placeholder:text-muted focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 aria-invalid:border-red-500 md:text-sm"
             value={values.note}
             onChange={(event) => handleChange('note', event.target.value)}
             onBlur={() => handleBlur('note')}

@@ -14,7 +14,7 @@ export const buttonVariants = cva(
       variant: {
         default: 'bg-accent text-white hover:bg-accent/90',
         secondary:
-          'border border-border bg-surface text-ink hover:bg-accent-soft',
+          'border border-border-strong bg-surface text-ink hover:bg-accent-soft',
         ghost: 'text-ink hover:bg-accent-soft',
         destructive: 'bg-red-600 text-white hover:bg-red-700',
       },

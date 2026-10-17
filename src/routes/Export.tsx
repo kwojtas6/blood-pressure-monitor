@@ -87,10 +87,17 @@ function ReportTablePreview({ measurements }: { measurements: Measurement[] }) {
                 <td className="px-3 py-2 text-ink">{measurement.diastolic} mmHg</td>
                 <td className="px-3 py-2 text-ink">{measurement.pulse} bpm</td>
                 <td className="px-3 py-2">
-                  <span
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-ink"
-                    style={{ color: CATEGORY_COLORS[measurement.category] }}
-                  >
+                  {/*
+                    Category text stays `text-ink` (not the raw WHO category
+                    color) — several of those colors (e.g. the yellow
+                    ELEVATED/NORMAL shades) fall well under the 4.5:1 text
+                    contrast minimum against this white cell background. The
+                    swatch dot below carries the color instead: it's
+                    `aria-hidden` and redundant with the adjacent text label,
+                    so it's decorative rather than the sole means of
+                    conveying the category (task 6 accessibility pass).
+                  */}
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-ink">
                     <span
                       className="h-2 w-2 shrink-0 rounded-full"
                       style={{ backgroundColor: CATEGORY_COLORS[measurement.category] }}
