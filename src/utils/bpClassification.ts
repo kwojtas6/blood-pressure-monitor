@@ -14,7 +14,7 @@ export interface BpClassification {
 }
 
 /** Severity-ordered categories, index = severity level (0 = least severe). */
-const CATEGORY_ORDER: Category[] = [
+export const CATEGORY_ORDER: Category[] = [
   'OPTIMAL',
   'NORMAL',
   'ELEVATED',
