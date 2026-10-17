@@ -1,15 +1,15 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router'
+import BloodPressureChart from '../components/BloodPressureChart'
 import MeasurementList from '../components/MeasurementList'
-import MiniTrendChart from '../components/MiniTrendChart'
 import { buttonVariants } from '../components/ui/button-variants'
 import { useMeasurements } from '../store/useMeasurements'
 import { filterByDateRange } from '../utils/dateRange'
 
 /**
  * Dashboard (spec §6 `/`): quick-entry shortcut, last 5 measurements, and a
- * 7-day trend. The trend is a lightweight placeholder — the real chart
- * (`BloodPressureChart`, Task 4) can replace `MiniTrendChart` once it exists.
+ * 7-day trend chart. No date-range selector here — always scoped to the last
+ * 7 days via `filterByDateRange`.
  */
 function Dashboard() {
   const measurements = useMeasurements((state) => state.measurements)
@@ -62,7 +62,7 @@ function Dashboard() {
               Last 7 days
             </h2>
             <div className="mt-3">
-              <MiniTrendChart measurements={last7Days} />
+              <BloodPressureChart measurements={last7Days} height={180} />
             </div>
           </div>
 
