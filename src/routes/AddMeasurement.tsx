@@ -1,13 +1,23 @@
+import { useParams } from 'react-router'
+import MeasurementForm from '../components/MeasurementForm'
+
+/**
+ * Route wrapper for `/add` (create) and `/add/:id` (edit). Parses the
+ * optional `:id` param and hands it to `MeasurementForm`, which does the
+ * actual add-vs-edit branching.
+ */
 function AddMeasurement() {
+  const { id } = useParams<{ id?: string }>()
+  const measurementId = id !== undefined ? Number(id) : undefined
+
   return (
-    <section aria-labelledby="add-measurement-heading">
-      <h1 id="add-measurement-heading" className="text-2xl font-bold text-ink">
-        Add measurement
-      </h1>
-      <p className="mt-2 text-muted">
-        The measurement entry form will live here.
-      </p>
-    </section>
+    <MeasurementForm
+      measurementId={
+        measurementId !== undefined && Number.isFinite(measurementId)
+          ? measurementId
+          : undefined
+      }
+    />
   )
 }
 

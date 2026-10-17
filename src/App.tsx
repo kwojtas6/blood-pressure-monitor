@@ -12,6 +12,7 @@ function App() {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/add" element={<AddMeasurement />} />
+        <Route path="/add/:id" element={<AddMeasurement />} />
         <Route path="/history" element={<History />} />
         <Route path="/chart" element={<Chart />} />
         <Route path="/export" element={<Export />} />
