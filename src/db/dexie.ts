@@ -46,14 +46,3 @@ export async function deleteMeasurement(id: number): Promise<void> {
 export async function getAllMeasurements(): Promise<Measurement[]> {
   return db.measurements.orderBy('timestamp').toArray()
 }
-
-/** Returns measurements with `timestamp` within [start, end], inclusive. */
-export async function getMeasurementsByDateRange(
-  start: Date,
-  end: Date,
-): Promise<Measurement[]> {
-  return db.measurements
-    .where('timestamp')
-    .between(start, end, true, true)
-    .toArray()
-}

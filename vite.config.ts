@@ -37,21 +37,23 @@ export default defineConfig({
         // is ~400 KB raw — comfortably under either limit today, but this
         // avoids a silent precache gap if a future dependency bump grows it.
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // App-shell navigations: Workbox registers a `NavigationRoute` for
+        // `navigateFallback`, and its router matches the *first* route that
+        // applies to a given request — so this always wins over any
+        // runtime-caching entry for navigations, no matter how that entry
+        // is configured. In effect, navigations are served precache-first
+        // (falling back to `/index.html` from the precache when a URL
+        // isn't itself precached), which is a deliberate choice: it
+        // guarantees a reliable offline shell on first load (spec §8's
+        // offline requirement) rather than optimizing for "freshest
+        // content first". It is NOT a `NetworkFirst`/network-preferred
+        // strategy, regardless of what a runtime-caching entry here might
+        // claim — do not add a navigation `runtimeCaching` entry expecting
+        // it to run; it won't.
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         runtimeCaching: [
-          {
-            // App-shell navigations (spec §8: "NetworkFirst for navigation
-            // requests") — prefer a fresh shell when online, fall back to
-            // the precached one offline or on a slow/failed network.
-            urlPattern: ({ request }) => request.mode === 'navigate',
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'navigation',
-              networkTimeoutSeconds: 3,
-            },
-          },
           {
             // Static build assets (spec §8: "CacheFirst for static
             // assets") — these are content-hashed by Vite, so a cached
@@ -73,6 +75,31 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
+      // jsPDF 4.2.1 lists `html2canvas`, `canvg`, and `dompurify` as
+      // `optionalDependencies` and dynamically `import()`s them to support
+      // `jsPDF.prototype.html()`/`.addSvgAsImage()` — APIs this app never
+      // calls (it renders via `html2canvas-pro` and only ever uses
+      // `addImage`/`output`, see `src/utils/pdfExport.ts`). Rollup still
+      // code-splits those dynamic imports into their own chunks at build
+      // time regardless of whether the branch runs, shipping ~290KB+ raw
+      // of dead weight (plain `html2canvas` among them, which the project
+      // otherwise avoids in favor of `html2canvas-pro` for its oklch()
+      // support) to every user who exports/shares a PDF. Aliasing them to
+      // a tiny stub keeps jsPDF's code intact while eliminating those
+      // chunks; see `src/stubs/unused-jspdf-optional-dep.ts` for the
+      // defensive throw-if-ever-called guard.
+      html2canvas: path.resolve(
+        import.meta.dirname,
+        './src/stubs/unused-jspdf-optional-dep.ts',
+      ),
+      canvg: path.resolve(
+        import.meta.dirname,
+        './src/stubs/unused-jspdf-optional-dep.ts',
+      ),
+      dompurify: path.resolve(
+        import.meta.dirname,
+        './src/stubs/unused-jspdf-optional-dep.ts',
+      ),
     },
   },
 })

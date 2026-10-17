@@ -29,7 +29,11 @@ import { computeAllStats } from './stats'
  */
 
 const INK = '#1b302b'
-const MUTED = '#788883'
+// Kept in sync with `--color-muted` in src/index.css (currently #5a6b67,
+// 5.6:1 on white — WCAG AA). This can't just reference the CSS variable
+// since the report template is rendered off-DOM-tree for html2canvas-pro
+// rather than using the app's live stylesheet.
+const MUTED = '#5a6b67'
 const BORDER = '#e3ebe8'
 const SURFACE_ALT = '#f4f7f6'
 const REPORT_WIDTH = 760
@@ -478,5 +482,9 @@ export function downloadBlob(blob: Blob, filename: string): void {
   document.body.appendChild(link)
   link.click()
   link.remove()
-  URL.revokeObjectURL(url)
+  // Deferred rather than called synchronously: revoking immediately after
+  // `click()` can race the browser's own read of the blob URL to start the
+  // download, which flakily aborts it in Firefox/Safari. Deferring to a
+  // macrotask lets the download start first.
+  setTimeout(() => URL.revokeObjectURL(url), 0)
 }

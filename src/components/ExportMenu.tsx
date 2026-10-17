@@ -77,9 +77,13 @@ function ExportMenu({ measurements, dateRangeLabel }: ExportMenuProps) {
 
   const handleShare = async () => {
     setStatus({ kind: 'busy', action: 'share' })
+    // Hoisted out of the try block so the `NotAllowedError` fallback below
+    // can reuse the already-generated PDF instead of rendering it again.
+    let blob: Blob | undefined
+    let filename: string | undefined
     try {
-      const blob = await generateReportPdf({ measurements, dateRangeLabel })
-      const filename = reportFileName()
+      blob = await generateReportPdf({ measurements, dateRangeLabel })
+      filename = reportFileName()
       const file = new File([blob], filename, { type: 'application/pdf' })
       const summary = buildReportSummaryText(measurements, dateRangeLabel)
 
@@ -129,6 +133,52 @@ function ExportMenu({ measurements, dateRangeLabel }: ExportMenuProps) {
         setStatus({ kind: 'idle' })
         return
       }
+
+      // `generateReportPdf()` (dynamic imports + an html2canvas-pro render)
+      // runs before `navigator.share()` above, which can take long enough
+      // on a slow device/large report to outlast the browser's ~5s
+      // transient-activation window — `navigator.share()` then throws
+      // `NotAllowedError` even though the user *did* click Share. Treat
+      // that the same as "share unsupported" and fall through to the
+      // clipboard/download fallback instead of surfacing a raw error and
+      // losing the already-generated PDF.
+      if (error instanceof DOMException && error.name === 'NotAllowedError') {
+        try {
+          // Reuse the PDF generated above rather than rendering it again;
+          // only (re)generate if the throw happened before it existed.
+          blob ??= await generateReportPdf({ measurements, dateRangeLabel })
+          filename ??= reportFileName()
+          const summary = buildReportSummaryText(measurements, dateRangeLabel)
+
+          if (hasClipboardSupport()) {
+            await navigator.clipboard.writeText(summary)
+            downloadBlob(blob, filename)
+            setStatus({
+              kind: 'done',
+              message:
+                "Sharing timed out, so this copied a summary to the clipboard and downloaded the PDF instead.",
+            })
+            return
+          }
+
+          downloadBlob(blob, filename)
+          setStatus({
+            kind: 'done',
+            message: 'Sharing timed out, so this downloaded the PDF instead.',
+          })
+          return
+        } catch (fallbackError) {
+          setStatus({
+            kind: 'error',
+            message:
+              fallbackError instanceof Error
+                ? fallbackError.message
+                : 'Could not share the report.',
+          })
+          return
+        }
+      }
+
       setStatus({
         kind: 'error',
         message:

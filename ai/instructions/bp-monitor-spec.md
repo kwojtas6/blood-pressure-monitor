@@ -36,17 +36,17 @@ All data is stored **locally in the browser (IndexedDB)** — no account, no ser
 
 | Layer | Choice | Deviation from source spec |
 |---|---|---|
-| Framework | React 19 + TypeScript | Source doc specified React 18; this repo already has React 19 installed, which is a superset-compatible, actively supported version — kept as-is. **TypeScript is newly adopted** (repo started as plain JSX) per explicit decision to follow the spec's type-safety rationale for medical data. |
+| Framework | React 19 + TypeScript `^7.0.2` | Source doc specified React 18; this repo already has React 19 installed, which is a superset-compatible, actively supported version — kept as-is. **TypeScript is newly adopted** (repo started as plain JSX) per explicit decision to follow the spec's type-safety rationale for medical data. Shipped as `^7.0.2`, newer than originally assumed — fine, same recommendation to stay current. |
 | Bundler / dev | Vite | Already in place |
 | Styling | Tailwind CSS **v4** | New dependency. v4 uses the `@tailwindcss/vite` plugin and CSS-first config (`@import "tailwindcss"` + `@theme`), not `tailwind.config.js` + PostCSS. It also outputs colors as `oklch()` by default — see the PDF export row below. |
 | UI components | shadcn/ui (Radix-based, accessible) | New dependency. Current shadcn/ui is built for Tailwind v4 + React 19 (no `forwardRef`, `data-slot` attributes). |
-| Charts | Recharts **v3.7+** | New dependency. Source spec said v2; v3 supports React 16.8–19 without the `react-is` version-override workaround v2 needs. Pin `immer` to ≥11.0.1 (a transitive dep) — 3.6+ hits a known React 19 crash on immer 11.0.0. |
+| Charts | Recharts **`^3.10.1`** | New dependency. Source spec said v2; v3 supports React 16.8–19 without the `react-is` version-override workaround v2 needs. Pin `immer` to ≥11.0.1 (a transitive dep) — 3.6+ hits a known React 19 crash on immer 11.0.0. Shipped as `^3.10.1`, newer than originally assumed — fine, same recommendation to stay current. |
 | Local database | Dexie.js (IndexedDB wrapper) | New dependency |
 | State management | Zustand | New dependency |
 | PDF export | jsPDF + **`html2canvas-pro`** (not `html2canvas`) | New dependency. See "PDF export library" note below. |
-| PWA | vite-plugin-pwa (Workbox) | New dependency. Requires ≥1.3.0 for official Vite 8 support — this repo is already on Vite 8.3.4, ahead of the source spec's assumed Vite 5. |
-| Routing | `react-router` (not `react-router-dom`) | New dependency. v7+ recommends the unified package for new projects; `react-router-dom` is kept only for v6-era compatibility. |
-| Testing | Vitest + Testing Library | New dependency |
+| PWA | vite-plugin-pwa (Workbox) `^2.0.0` | New dependency. Originally noted as requiring "≥1.3.0" for official Vite 8 support; shipped as `^2.0.0`, ahead of that floor — fine, same recommendation to stay current. |
+| Routing | `react-router` (not `react-router-dom`) `^8.4.0` | New dependency. v7+ recommends the unified package for new projects; `react-router-dom` is kept only for v6-era compatibility. Shipped as `^8.4.0` (not v7-era as originally noted) — fine, same recommendation to stay current. |
+| Testing | _Not implemented_ | Originally planned as Vitest + Testing Library, but no test files exist anywhere in `src/` in this implementation — this is a real gap, not a silent omission, and should be picked up by whoever works on this project next. |
 | Linting | `oxlint` (already configured) | Kept as-is; add TS-aware lint rules as needed |
 
 ### PDF export library — do not use plain `html2canvas`
