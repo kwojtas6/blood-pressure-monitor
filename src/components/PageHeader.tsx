@@ -10,19 +10,28 @@ interface PageHeaderProps {
 /**
  * Navy header bar mounted at the top of each route's content
  * (`ai/instructions/ui-mockup-reference.md` §3/§4 — "dark navy header
- * (status bar + title/subtitle) at the top of every screen"). Bleeds to the
- * screen edge on mobile (where `AppLayout`'s `<main>` has side padding this
- * cancels out) and sits as a rounded bar within the content column on
- * desktop, next to the side nav rail.
+ * (status bar + title/subtitle) at the top of every screen"), as a rounded
+ * card within the normal content column at every breakpoint.
+ *
+ * Deliberately *not* bled edge-to-edge on mobile with negative margins:
+ * `AppLayout` renders `<IosInstallNote />` before `<Outlet />`, so this
+ * component can't assume it's the first element in `<main>` — a negative
+ * top margin here would overlap that banner whenever it's showing. A
+ * contained rounded bar avoids that fragility entirely while still reading
+ * as the mockup's navy header.
  *
  * Deliberately just a title + optional subtitle: the per-route content
  * (buttons, filters, counts) stays in the route itself. Contrast of white
  * title text / white-70%-opacity subtitle text against `--color-brand` is
  * checked in `src/index.css`'s token comment (11.64:1 / 6.58:1).
+ *
+ * No margin of its own — every call site already spaces its children
+ * itself (a `space-y-*` wrapper, or an explicit `mt-*` on the next
+ * sibling), the same convention the plain `<h1>`s this replaces followed.
  */
 function PageHeader({ title, subtitle, headingId }: PageHeaderProps) {
   return (
-    <div className="-mx-4 -mt-6 mb-6 bg-brand px-4 py-5 text-white md:mx-0 md:mt-0 md:rounded-lg md:px-6">
+    <div className="rounded-lg bg-brand px-4 py-5 text-white md:px-6">
       <h1 id={headingId} className="text-xl font-semibold">
         {title}
       </h1>
