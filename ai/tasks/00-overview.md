@@ -12,8 +12,9 @@ Work through these tasks in order — each depends on the ones before it. One ta
 | 4 | [Chart & stats](04-chart-and-stats.md) | 3 |
 | 5 | [Export & sharing](05-export-and-sharing.md) | 4 |
 | 6 | [PWA & polish](06-pwa-and-polish.md) | 5 |
+| 7 | [Apply UI mockups](07-apply-ui-mockups.md) | 6 |
 
-Estimated total: 14–20 working days for one developer (per source spec); treat as relative sizing, not a deadline.
+Estimated total: 14–20 working days for one developer (per source spec); treat as relative sizing, not a deadline. Task 7 was added after Tasks 1–6 were implemented and reviewed — it's a presentation-layer pass against `ai/instructions/ui-mockup-reference.md`, not part of the original estimate.
 
 ## Ground rules for every task
 
