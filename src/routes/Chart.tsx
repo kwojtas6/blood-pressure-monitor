@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import BloodPressureChart from '../components/BloodPressureChart'
+import DateRangePills from '../components/DateRangePills'
+import PageHeader from '../components/PageHeader'
 import StatsPanel from '../components/StatsPanel'
-import { Label } from '../components/ui/label'
-import { Select } from '../components/ui/select'
 import { useMeasurements } from '../store/useMeasurements'
 import {
-  DATE_RANGE_OPTIONS,
+  dateRangeLabel,
   filterByDateRange,
   type DateRangeOption,
 } from '../utils/dateRange'
@@ -31,28 +31,9 @@ function Chart() {
 
   return (
     <section aria-labelledby="chart-heading" className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 id="chart-heading" className="text-2xl font-bold text-ink">
-          Chart
-        </h1>
-        <div>
-          <Label htmlFor="chart-date-range">Date range</Label>
-          <Select
-            id="chart-date-range"
-            className="mt-1"
-            value={dateRange}
-            onChange={(event) =>
-              setDateRange(event.target.value as DateRangeOption)
-            }
-          >
-            {DATE_RANGE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </div>
-      </div>
+      <PageHeader headingId="chart-heading" title="Chart" subtitle={dateRangeLabel(dateRange)} />
+
+      <DateRangePills ariaLabel="Date range" value={dateRange} onChange={setDateRange} />
 
       {isLoading && <p className="text-muted">Loading…</p>}
 

@@ -17,6 +17,14 @@ interface BloodPressureChartProps {
   measurements: Measurement[]
   /** Chart area height in pixels. Defaults to 260 (used on the `/chart` route); the dashboard passes a smaller value. */
   height?: number
+  /**
+   * Thinner/simpler presentation for small embeds (the dashboard's 7-day
+   * mini-chart, per `ai/instructions/ui-mockup-reference.md` §4) — hides
+   * the axis tick labels and tooltip, which have little room to be legible
+   * at that size, while keeping the same lines/legend/data. The full
+   * accessible data table below is unaffected either way.
+   */
+  compact?: boolean
 }
 
 interface ChartPoint {
@@ -71,7 +79,11 @@ function summarize(data: ChartPoint[]): string {
  * is available to screen readers / non-visual users, not just as a bare SVG
  * (`ai/tasks/04-chart-and-stats.md` accessibility requirement).
  */
-function BloodPressureChart({ measurements, height = 260 }: BloodPressureChartProps) {
+function BloodPressureChart({
+  measurements,
+  height = 260,
+  compact = false,
+}: BloodPressureChartProps) {
   const captionId = useId()
   const data = toChartData(measurements)
 
@@ -92,18 +104,22 @@ function BloodPressureChart({ measurements, height = 260 }: BloodPressureChartPr
             margin={{ top: 8, right: 12, left: 0, bottom: 8 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e3ebe8" />
-            <XAxis
-              dataKey="dateLabel"
-              tick={{ fontSize: 11 }}
-              tickMargin={8}
-              minTickGap={24}
-            />
-            <YAxis tick={{ fontSize: 11 }} width={32} />
-            <Tooltip
-              labelFormatter={(_, payload) =>
-                payload?.[0]?.payload?.fullLabel ?? ''
-              }
-            />
+            {!compact && (
+              <XAxis
+                dataKey="dateLabel"
+                tick={{ fontSize: 11 }}
+                tickMargin={8}
+                minTickGap={24}
+              />
+            )}
+            {!compact && <YAxis tick={{ fontSize: 11 }} width={32} />}
+            {!compact && (
+              <Tooltip
+                labelFormatter={(_, payload) =>
+                  payload?.[0]?.payload?.fullLabel ?? ''
+                }
+              />
+            )}
             <Legend wrapperStyle={{ fontSize: 12 }} />
             {SERIES.map((series) => (
               <Line
@@ -113,8 +129,14 @@ function BloodPressureChart({ measurements, height = 260 }: BloodPressureChartPr
                 name={series.label}
                 stroke={series.color}
                 strokeWidth={2}
-                dot={data.length < 30}
-                activeDot={{ r: 4 }}
+                // Diastolic/pulse are dashed (mockup §1/§2) so the three
+                // series are never distinguished by color alone — this
+                // also gives the pulse line a non-color cue to offset its
+                // line-vs-background contrast being under 3:1 (see
+                // `src/utils/series.ts`'s doc comment).
+                strokeDasharray={series.key === 'systolic' ? undefined : '6 4'}
+                dot={!compact && data.length < 30}
+                activeDot={compact ? false : { r: 4 }}
                 isAnimationActive={false}
               />
             ))}

@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react'
 import BloodPressureChart from '../components/BloodPressureChart'
+import DateRangePills from '../components/DateRangePills'
 import ExportMenu from '../components/ExportMenu'
+import PageHeader from '../components/PageHeader'
 import StatsPanel from '../components/StatsPanel'
-import { Label } from '../components/ui/label'
-import { Select } from '../components/ui/select'
 import { useMeasurements } from '../store/useMeasurements'
 import type { Measurement } from '../types'
-import { CATEGORY_COLORS, CATEGORY_LABELS } from '../utils/bpClassification'
+import { CATEGORY_BADGE_STYLES, CATEGORY_LABELS } from '../utils/bpClassification'
 import {
-  DATE_RANGE_OPTIONS,
+  dateRangeLabel,
   filterByDateRange,
   type DateRangeOption,
 } from '../utils/dateRange'
+import { computeAllStats } from '../utils/stats'
 
 function formatDateTime(date: Date): { date: string; time: string } {
   return {
@@ -22,10 +23,6 @@ function formatDateTime(date: Date): { date: string; time: string } {
     }),
     time: date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
   }
-}
-
-function dateRangeLabel(option: DateRangeOption): string {
-  return DATE_RANGE_OPTIONS.find((entry) => entry.value === option)?.label ?? 'All time'
 }
 
 /**
@@ -88,21 +85,20 @@ function ReportTablePreview({ measurements }: { measurements: Measurement[] }) {
                 <td className="px-3 py-2 text-ink">{measurement.pulse} bpm</td>
                 <td className="px-3 py-2">
                   {/*
-                    Category text stays `text-ink` (not the raw WHO category
-                    color) — several of those colors (e.g. the yellow
-                    ELEVATED/NORMAL shades) fall well under the 4.5:1 text
-                    contrast minimum against this white cell background. The
-                    swatch dot below carries the color instead: it's
-                    `aria-hidden` and redundant with the adjacent text label,
-                    so it's decorative rather than the sole means of
-                    conveying the category (task 6 accessibility pass).
+                    Task 7: the pastel `CATEGORY_BADGE_STYLES` pairing
+                    (bg + matching dark text) is itself contrast-checked to
+                    ≥4.5:1 — see `src/utils/bpClassification.ts` — so the
+                    category text can carry its own color directly instead
+                    of staying neutral `text-ink` with a separate swatch
+                    dot (the Task 6 workaround this replaces).
                   */}
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-ink">
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: CATEGORY_COLORS[measurement.category] }}
-                      aria-hidden="true"
-                    />
+                  <span
+                    className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    style={{
+                      backgroundColor: CATEGORY_BADGE_STYLES[measurement.category].bg,
+                      color: CATEGORY_BADGE_STYLES[measurement.category].text,
+                    }}
+                  >
                     {CATEGORY_LABELS[measurement.category]}
                   </span>
                 </td>
@@ -117,9 +113,94 @@ function ReportTablePreview({ measurements }: { measurements: Measurement[] }) {
 }
 
 /**
+ * Fixed Average/Minimum/Maximum semantic color roles for the report-preview
+ * stat boxes (`ai/instructions/ui-mockup-reference.md` §2's "Report preview
+ * mini-stats" table) — deliberately *not* `CATEGORY_COLORS`/
+ * `CATEGORY_BADGE_STYLES`: minimum is always the "good" green role and
+ * maximum always the "attention" red role, regardless of what those actual
+ * readings classify as under the WHO table. Contrast-checked (task 7):
+ *   Average #185FA5 on #EBF2F8: 5.77:1
+ *   Minimum #3B6D11 on #EAF3DE: 5.43:1
+ *   Maximum #A32D2D on #FCEBEB: 6.13:1
+ */
+const REPORT_STAT_ROLES = [
+  { key: 'average', label: 'Average', bg: '#EBF2F8', text: '#185FA5' },
+  { key: 'minimum', label: 'Minimum', bg: '#EAF3DE', text: '#3B6D11' },
+  { key: 'maximum', label: 'Maximum', bg: '#FCEBEB', text: '#A32D2D' },
+] as const
+
+/**
+ * Compact "at a glance" summary card (mockup §4 Export screen: "title, date
+ * range + count, 3 colored stat boxes, divider, footnote"). Distinct from
+ * `ReportTablePreview`/`StatsPanel`/the chart below, which already give the
+ * full detail on this (web) page rather than a phone-sized teaser — so the
+ * footnote here says what's included below instead of hiding it.
+ * Average/min/max are by systolic reading (the primary metric), reusing
+ * `computeAllStats` rather than re-deriving mean/min/max.
+ */
+function ReportPreviewCard({
+  measurements,
+  rangeLabel,
+}: {
+  measurements: Measurement[]
+  rangeLabel: string
+}) {
+  if (measurements.length === 0) return null
+
+  const stats = computeAllStats(measurements)
+  const systolicStats = stats.find((entry) => entry.key === 'systolic')
+  const diastolicStats = stats.find((entry) => entry.key === 'diastolic')
+  const bySystolic = [...measurements].sort((a, b) => a.systolic - b.systolic)
+  const minReading = bySystolic[0]
+  const maxReading = bySystolic[bySystolic.length - 1]
+
+  const values: Record<(typeof REPORT_STAT_ROLES)[number]['key'], string> = {
+    average:
+      systolicStats && diastolicStats
+        ? `${systolicStats.stats.mean.toFixed(0)}/${diastolicStats.stats.mean.toFixed(0)}`
+        : '—',
+    minimum: `${minReading.systolic}/${minReading.diastolic}`,
+    maximum: `${maxReading.systolic}/${maxReading.diastolic}`,
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-surface p-4">
+      <h2 className="text-lg font-semibold text-ink">Blood Pressure Report</h2>
+      <p className="mt-1 text-sm text-muted">
+        {rangeLabel} &middot; {measurements.length} measurement
+        {measurements.length === 1 ? '' : 's'}
+      </p>
+
+      <div className="mt-3 grid grid-cols-3 gap-3">
+        {REPORT_STAT_ROLES.map((role) => (
+          <div
+            key={role.key}
+            className="rounded-md p-3 text-center"
+            style={{ backgroundColor: role.bg }}
+          >
+            <p className="text-[11px] font-semibold tracking-wide uppercase" style={{ color: role.text }}>
+              {role.label}
+            </p>
+            <p className="mt-1 text-lg font-medium" style={{ color: role.text }}>
+              {values[role.key]}
+            </p>
+            <p className="text-[11px] text-muted">mmHg</p>
+          </div>
+        ))}
+      </div>
+
+      <hr className="mt-4 border-border" />
+      <p className="mt-3 text-xs text-muted">
+        The full measurement table and trend chart for this range are included below.
+      </p>
+    </div>
+  )
+}
+
+/**
  * Export view (spec §2 "Export" row, §6 `/export`): a preview of the report
  * plus PDF export and sharing actions, scoped to a date range the same way
- * `/chart` and `/history` are (`DATE_RANGE_OPTIONS` / `filterByDateRange`).
+ * `/chart` and `/history` are (`DateRangePills` / `filterByDateRange`).
  */
 function Export() {
   const measurements = useMeasurements((state) => state.measurements)
@@ -138,35 +219,19 @@ function Export() {
 
   return (
     <section aria-labelledby="export-heading" className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 id="export-heading" className="text-2xl font-bold text-ink">
-            Export
-          </h1>
-          <p className="mt-1 text-muted">
-            Export a PDF report to share with your doctor, or send it another
-            way. Nothing here ever leaves this device except through the
-            action you choose.
-          </p>
-        </div>
-        <div>
-          <Label htmlFor="export-date-range">Date range</Label>
-          <Select
-            id="export-date-range"
-            className="mt-1"
-            value={dateRange}
-            onChange={(event) =>
-              setDateRange(event.target.value as DateRangeOption)
-            }
-          >
-            {DATE_RANGE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </div>
-      </div>
+      <PageHeader
+        headingId="export-heading"
+        title="Export"
+        subtitle={`${rangeLabel} · ${visible.length} measurement${visible.length === 1 ? '' : 's'}`}
+      />
+
+      <p className="text-muted">
+        Export a PDF report to share with your doctor, or send it another
+        way. Nothing here ever leaves this device except through the action
+        you choose.
+      </p>
+
+      <DateRangePills ariaLabel="Date range" value={dateRange} onChange={setDateRange} />
 
       {isLoading && <p className="text-muted">Loading…</p>}
 
@@ -182,6 +247,8 @@ function Export() {
       {!isLoading && hasAnyMeasurements && (
         <>
           <ExportMenu measurements={visible} dateRangeLabel={rangeLabel} />
+
+          <ReportPreviewCard measurements={visible} rangeLabel={rangeLabel} />
 
           <div className="rounded-lg border border-border bg-surface p-4">
             <h2 className="text-lg font-semibold text-ink">Trend</h2>

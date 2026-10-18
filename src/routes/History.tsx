@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
+import DateRangePills from '../components/DateRangePills'
 import MeasurementList from '../components/MeasurementList'
+import PageHeader from '../components/PageHeader'
 import { Label } from '../components/ui/label'
 import { Select } from '../components/ui/select'
 import { useMeasurements } from '../store/useMeasurements'
 import type { Category } from '../types'
 import { CATEGORY_LABELS, CATEGORY_ORDER } from '../utils/bpClassification'
-import {
-  DATE_RANGE_OPTIONS,
-  filterByDateRange,
-  type DateRangeOption,
-} from '../utils/dateRange'
+import { filterByDateRange, type DateRangeOption } from '../utils/dateRange'
 
 type CategoryFilter = Category | 'all'
 type SortOrder = 'newest' | 'oldest'
@@ -52,9 +50,11 @@ function History() {
 
   return (
     <section aria-labelledby="history-heading">
-      <h1 id="history-heading" className="text-2xl font-bold text-ink">
-        History
-      </h1>
+      <PageHeader
+        headingId="history-heading"
+        title="History"
+        subtitle={`${measurements.length} measurement${measurements.length === 1 ? '' : 's'} recorded`}
+      />
 
       {isLoading && <p className="mt-4 text-muted">Loading…</p>}
 
@@ -69,6 +69,14 @@ function History() {
 
       {!isLoading && hasAnyMeasurements && (
         <>
+          <DateRangePills
+            className="mt-4"
+            ariaLabel="Date range"
+            options={['all', '7', '30', '90']}
+            value={dateRange}
+            onChange={setDateRange}
+          />
+
           <div className="mt-4 flex flex-wrap items-end gap-4">
             <div>
               <Label htmlFor="category-filter">Category</Label>
@@ -84,24 +92,6 @@ function History() {
                 {CATEGORY_ORDER.map((category) => (
                   <option key={category} value={category}>
                     {CATEGORY_LABELS[category]}
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="date-range-filter">Date range</Label>
-              <Select
-                id="date-range-filter"
-                className="mt-1"
-                value={dateRange}
-                onChange={(event) =>
-                  setDateRange(event.target.value as DateRangeOption)
-                }
-              >
-                {DATE_RANGE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
                   </option>
                 ))}
               </Select>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { cn } from '../lib/utils'
 import type { Measurement } from '../types'
 import {
@@ -7,7 +7,7 @@ import {
   generateReportPdf,
   reportFileName,
 } from '../utils/pdfExport'
-import { Button } from './ui/button'
+import { CopyIcon, DownloadIcon, ShareIcon } from './icons'
 
 interface ExportMenuProps {
   /** Measurements already scoped to the export view's selected date range. */
@@ -18,7 +18,7 @@ interface ExportMenuProps {
 
 type Status =
   | { kind: 'idle' }
-  | { kind: 'busy'; action: 'pdf' | 'share' }
+  | { kind: 'busy'; action: 'pdf' | 'share' | 'copy' }
   | { kind: 'done'; message: string }
   | { kind: 'error'; message: string }
 
@@ -71,6 +71,33 @@ function ExportMenu({ measurements, dateRangeLabel }: ExportMenuProps) {
         kind: 'error',
         message:
           error instanceof Error ? error.message : 'Could not generate the PDF.',
+      })
+    }
+  }
+
+  /**
+   * "Copy data" (task 7, Decision 5): a first-class third action next to
+   * PDF/Share, surfacing the same plain-text summary `handleShare` already
+   * falls back to when the Web Share API is unavailable — reused here via
+   * `buildReportSummaryText` rather than building a second summary format.
+   */
+  const handleCopy = async () => {
+    setStatus({ kind: 'busy', action: 'copy' })
+    try {
+      const summary = buildReportSummaryText(measurements, dateRangeLabel)
+      if (!hasClipboardSupport()) {
+        setStatus({
+          kind: 'error',
+          message: "Copying isn't supported on this browser.",
+        })
+        return
+      }
+      await navigator.clipboard.writeText(summary)
+      setStatus({ kind: 'done', message: 'Copied a summary to the clipboard.' })
+    } catch (error) {
+      setStatus({
+        kind: 'error',
+        message: error instanceof Error ? error.message : 'Could not copy the data.',
       })
     }
   }
@@ -189,22 +216,41 @@ function ExportMenu({ measurements, dateRangeLabel }: ExportMenuProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-3">
-        <Button type="button" onClick={handleExportPdf} disabled={isBusy}>
-          {status.kind === 'busy' && status.action === 'pdf'
-            ? 'Generating PDF…'
-            : 'Export PDF'}
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={handleShare}
+      {/*
+        Icon-chip + title + description action rows
+        (`ai/instructions/ui-mockup-reference.md` §1/§4 "list of actions...
+        Download PDF, Share, Copy data"), each a real `<button>` driving the
+        same handlers as before. "Copy data" is new (task 7, Decision 5) —
+        previously only reachable as a silent fallback inside `handleShare`.
+      */}
+      <div className="divide-y divide-border rounded-lg border border-border bg-surface">
+        <ExportAction
+          icon={<DownloadIcon className="h-5 w-5" />}
+          title="Download PDF"
+          description="Save a PDF report of this range to your device."
+          busyLabel="Generating PDF…"
+          isBusy={status.kind === 'busy' && status.action === 'pdf'}
           disabled={isBusy}
-        >
-          {status.kind === 'busy' && status.action === 'share'
-            ? 'Preparing…'
-            : 'Share'}
-        </Button>
+          onClick={handleExportPdf}
+        />
+        <ExportAction
+          icon={<ShareIcon className="h-5 w-5" />}
+          title="Share"
+          description="Send the report using your device's share sheet."
+          busyLabel="Preparing…"
+          isBusy={status.kind === 'busy' && status.action === 'share'}
+          disabled={isBusy}
+          onClick={handleShare}
+        />
+        <ExportAction
+          icon={<CopyIcon className="h-5 w-5" />}
+          title="Copy data"
+          description="Copy a plain-text summary of this range to your clipboard."
+          busyLabel="Copying…"
+          isBusy={status.kind === 'busy' && status.action === 'copy'}
+          disabled={isBusy}
+          onClick={handleCopy}
+        />
       </div>
 
       <p
@@ -218,6 +264,45 @@ function ExportMenu({ measurements, dateRangeLabel }: ExportMenuProps) {
         {status.kind === 'done' || status.kind === 'error' ? status.message : ''}
       </p>
     </div>
+  )
+}
+
+interface ExportActionProps {
+  icon: ReactNode
+  title: string
+  description: string
+  busyLabel: string
+  isBusy: boolean
+  disabled: boolean
+  onClick: () => void
+}
+
+function ExportAction({
+  icon,
+  title,
+  description,
+  busyLabel,
+  isBusy,
+  disabled,
+  onClick,
+}: ExportActionProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-brand-accent">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium text-ink">
+          {isBusy ? busyLabel : title}
+        </span>
+        <span className="block text-xs text-muted">{description}</span>
+      </span>
+    </button>
   )
 }
 

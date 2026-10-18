@@ -38,3 +38,15 @@ export function filterByDateRange<T extends { timestamp: Date }>(
   if (!start) return items
   return items.filter((item) => item.timestamp >= start)
 }
+
+/**
+ * Human-readable label for a date-range option, e.g. for a page header
+ * subtitle or report title. Shared by `/chart` and `/export` (task 7) so
+ * the two routes never describe the same selection differently.
+ */
+export function dateRangeLabel(option: DateRangeOption): string {
+  return (
+    DATE_RANGE_OPTIONS.find((entry) => entry.value === option)?.label ??
+    'All time'
+  )
+}

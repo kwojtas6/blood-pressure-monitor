@@ -32,6 +32,42 @@ export const CATEGORY_COLORS: Record<Category, string> = {
   STAGE_3: '#991B1B',
 }
 
+/**
+ * Soft pastel badge treatment (tinted background + matching dark text) per
+ * `ai/instructions/ui-mockup-reference.md` §2/Decision 2 — a distinct,
+ * *badge-only* color mapping from `CATEGORY_COLORS` above, which stays the
+ * authoritative saturated *data* color (list-item left border, chart lines,
+ * swatch dots). Four of the six pairs are the mockup's own hex values
+ * (`.badge-optimal`/`.badge-elevated`/`.badge-h1`/`.badge-high`); `NORMAL`
+ * and `STAGE_3` have no mockup swatch and are derived (see ruling below).
+ * Every pair is WCAG AA text-contrast-checked (≥4.5:1), not eyeballed:
+ *
+ *   OPTIMAL  bg #EAF3DE / text #3B6D11 — 5.43:1 (mockup `.badge-optimal`)
+ *   NORMAL   bg #F2F0DC / text #605E0E — 5.89:1 (derived: midpoint of the
+ *            OPTIMAL and ELEVATED pairs below, in both channels — NORMAL
+ *            sits between them on the severity scale and visually reads as
+ *            the yellow-green step CATEGORY_COLORS already implies)
+ *   ELEVATED bg #FAEEDA / text #854F0B — 5.87:1 (mockup `.badge-elevated`)
+ *   STAGE_1  bg #FCEBEB / text #A32D2D — 6.13:1 (mockup `.badge-h1`)
+ *   STAGE_2  bg #F4C0D1 / text #72243E — 6.53:1 (mockup `.badge-high` — the
+ *            reference doc leaves it ambiguous whether this single swatch
+ *            is STAGE_2 or STAGE_3; assigned to STAGE_2 here because it's
+ *            the less-saturated of the two pink tiers, see STAGE_3 below)
+ *   STAGE_3  bg #EC95B7 / text #411B4F — 6.39:1 (derived: STAGE_1→STAGE_2's
+ *            own per-channel delta applied one more step, i.e. extrapolating
+ *            the mockup's existing severity progression rather than
+ *            re-using STAGE_2's swatch for both tiers — STAGE_3 is the most
+ *            severe category so its badge is the most visually intense)
+ */
+export const CATEGORY_BADGE_STYLES: Record<Category, { bg: string; text: string }> = {
+  OPTIMAL: { bg: '#EAF3DE', text: '#3B6D11' },
+  NORMAL: { bg: '#F2F0DC', text: '#605E0E' },
+  ELEVATED: { bg: '#FAEEDA', text: '#854F0B' },
+  STAGE_1: { bg: '#FCEBEB', text: '#A32D2D' },
+  STAGE_2: { bg: '#F4C0D1', text: '#72243E' },
+  STAGE_3: { bg: '#EC95B7', text: '#411B4F' },
+}
+
 export const CATEGORY_LABELS: Record<Category, string> = {
   OPTIMAL: 'Optimal',
   NORMAL: 'Normal',

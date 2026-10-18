@@ -1,7 +1,11 @@
 import { Link } from 'react-router'
 import { cn } from '../lib/utils'
 import type { Measurement } from '../types'
-import { CATEGORY_COLORS, CATEGORY_LABELS } from '../utils/bpClassification'
+import {
+  CATEGORY_BADGE_STYLES,
+  CATEGORY_COLORS,
+  CATEGORY_LABELS,
+} from '../utils/bpClassification'
 import { buttonVariants } from './ui/button-variants'
 
 interface MeasurementListProps {
@@ -59,6 +63,7 @@ function MeasurementList({
         const { date, time } = formatDateTime(measurement.timestamp)
         const label = CATEGORY_LABELS[measurement.category]
         const color = CATEGORY_COLORS[measurement.category]
+        const badge = CATEGORY_BADGE_STYLES[measurement.category]
         const summary = `${date} at ${time}: ${measurement.systolic} over ${measurement.diastolic} millimeters of mercury, pulse ${measurement.pulse} beats per minute, ${label}${
           measurement.note ? `, note: ${measurement.note}` : ''
         }`
@@ -79,12 +84,10 @@ function MeasurementList({
                 <span className="text-sm text-muted">
                   pulse {measurement.pulse} bpm
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-ink">
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: color }}
-                    aria-hidden="true"
-                  />
+                <span
+                  className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  style={{ backgroundColor: badge.bg, color: badge.text }}
+                >
                   {label}
                 </span>
               </div>

@@ -1,5 +1,5 @@
 import type { Measurement } from '../types'
-import { computeStats, METRICS } from '../utils/stats'
+import { computeStats, METRICS, type MetricDefinition, type MetricStats } from '../utils/stats'
 
 interface StatsPanelProps {
   /** Measurements already scoped to the window to summarize (e.g. by date range). */
@@ -20,34 +20,43 @@ function StatsPanel({ measurements }: StatsPanelProps) {
     )
   }
 
+  const statsByMetric = METRICS.map((metric) => ({
+    metric,
+    stats: computeStats(measurements.map((m) => m[metric.key])),
+  })).filter(
+    (entry): entry is { metric: MetricDefinition; stats: MetricStats } =>
+      entry.stats !== null,
+  )
+
   return (
-    <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      {METRICS.map((metric) => {
-        const stats = computeStats(measurements.map((m) => m[metric.key]))
-        if (!stats) return null
-        return (
-          <div
-            key={metric.key}
-            className="rounded-lg border border-border bg-surface p-4"
-          >
-            <dt className="text-sm font-semibold tracking-wide text-muted uppercase">
+    <div className="rounded-lg border border-border bg-surface p-4">
+      {/* 3-box average grid (mockup §4 "stats card"). */}
+      <dl className="grid grid-cols-3 gap-3">
+        {statsByMetric.map(({ metric, stats }) => (
+          <div key={metric.key} className="rounded-md bg-surface-inset p-3 text-center">
+            <dt className="text-[11px] font-semibold tracking-wide text-muted uppercase">
               {metric.label}
             </dt>
-            <dd className="mt-2 space-y-1 text-sm text-ink">
-              <div>
-                Mean: {stats.mean.toFixed(1)} {metric.unit}
-              </div>
-              <div>
-                Min: {stats.min} {metric.unit}
-              </div>
-              <div>
-                Max: {stats.max} {metric.unit}
-              </div>
+            <dd className="mt-1 text-xl font-medium text-brand">
+              {stats.mean.toFixed(1)}
+            </dd>
+            <p className="text-[11px] text-muted">{metric.unit} avg</p>
+          </div>
+        ))}
+      </dl>
+
+      {/* Min/max metric rows. */}
+      <dl className="mt-4 divide-y divide-border">
+        {statsByMetric.map(({ metric, stats }) => (
+          <div key={metric.key} className="flex items-center justify-between py-2 text-sm">
+            <dt className="text-muted">{metric.label} range</dt>
+            <dd className="font-medium text-ink">
+              {stats.min}–{stats.max} {metric.unit}
             </dd>
           </div>
-        )
-      })}
-    </dl>
+        ))}
+      </dl>
+    </div>
   )
 }
 

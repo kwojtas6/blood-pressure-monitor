@@ -1,17 +1,26 @@
 import clsx from 'clsx'
 import { NavLink } from 'react-router'
+import {
+  ChartWaveIcon,
+  ExportIcon,
+  HomeIcon,
+  ListIcon,
+  PlusIcon,
+} from './icons'
+import type { ComponentType, SVGProps } from 'react'
 
 interface NavItem {
   to: string
   label: string
+  Icon: ComponentType<SVGProps<SVGSVGElement>>
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/add', label: 'Add' },
-  { to: '/history', label: 'History' },
-  { to: '/chart', label: 'Chart' },
-  { to: '/export', label: 'Export' },
+  { to: '/', label: 'Dashboard', Icon: HomeIcon },
+  { to: '/add', label: 'Add', Icon: PlusIcon },
+  { to: '/history', label: 'History', Icon: ListIcon },
+  { to: '/chart', label: 'Chart', Icon: ChartWaveIcon },
+  { to: '/export', label: 'Export', Icon: ExportIcon },
 ]
 
 const linkClasses = ({ isActive }: { isActive: boolean }) =>
@@ -33,6 +42,7 @@ function NavBar() {
         {NAV_ITEMS.map((item) => (
           <li key={item.to} className="flex flex-1">
             <NavLink to={item.to} end={item.to === '/'} className={linkClasses}>
+              <item.Icon className="h-5 w-5" />
               {item.label}
             </NavLink>
           </li>
@@ -43,6 +53,7 @@ function NavBar() {
         {NAV_ITEMS.map((item) => (
           <li key={item.to}>
             <NavLink to={item.to} end={item.to === '/'} className={linkClasses}>
+              <item.Icon className="h-5 w-5" />
               {item.label}
             </NavLink>
           </li>

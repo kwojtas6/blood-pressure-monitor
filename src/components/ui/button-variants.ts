@@ -12,7 +12,11 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-accent text-white hover:bg-accent/90',
+        // Task 7: primary-button background is `--color-brand` (the navy
+        // header color), distinct from `--color-accent`/`-soft` used for
+        // links/active-nav/focus — see `src/index.css`'s token comment.
+        // White-on-brand text contrast: 11.64:1.
+        default: 'bg-brand text-white hover:bg-brand/90',
         secondary:
           'border border-border-strong bg-surface text-ink hover:bg-accent-soft',
         ghost: 'text-ink hover:bg-accent-soft',

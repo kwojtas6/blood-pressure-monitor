@@ -4,6 +4,11 @@ import { useMeasurements } from '../store/useMeasurements'
 import type { Measurement } from '../types'
 import type { MeasurementInput } from '../store/useMeasurements'
 import {
+  bpClassification,
+  CATEGORY_BADGE_STYLES,
+  CATEGORY_LABELS,
+} from '../utils/bpClassification'
+import {
   fromDatetimeLocalValue,
   toDatetimeLocalValue,
 } from '../utils/datetimeLocal'
@@ -16,9 +21,73 @@ import {
   validateMeasurementForm,
   type MeasurementFormValues,
 } from '../utils/measurementValidation'
+import { CheckCircleIcon } from './icons'
+import PageHeader from './PageHeader'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
+
+interface NumericFieldProps {
+  id: 'systolic' | 'diastolic' | 'pulse'
+  label: string
+  unit: string
+  range: { min: number; max: number }
+  value: string
+  error?: string
+  onChange: (value: string) => void
+  onBlur: () => void
+}
+
+/**
+ * Large-value card treatment for a numeric reading field
+ * (`ai/instructions/ui-mockup-reference.md` §3/§4, task 7 Decision 3): a
+ * real `<input type="number">` with its existing label/validation wiring
+ * untouched, just restyled (bigger value text, a unit suffix, a min/max
+ * caption) — not a custom tap-to-edit widget. Factored out since the same
+ * shape repeats for systolic/diastolic/pulse.
+ */
+function NumericField({
+  id,
+  label,
+  unit,
+  range,
+  value,
+  error,
+  onChange,
+  onBlur,
+}: NumericFieldProps) {
+  return (
+    <div className="rounded-md bg-surface-inset p-3">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="mt-1 flex items-baseline gap-2">
+        <Input
+          id={id}
+          name={id}
+          type="number"
+          inputMode="numeric"
+          min={range.min}
+          max={range.max}
+          className="h-auto w-full border-0 bg-transparent p-0 text-[22px] font-medium shadow-none"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          onBlur={onBlur}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-error` : undefined}
+          required
+        />
+        <span className="shrink-0 text-sm text-muted">{unit}</span>
+      </div>
+      <p className="mt-1 text-xs text-muted">
+        Range: {range.min}–{range.max} {unit}
+      </p>
+      {error && (
+        <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-red-600">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
 
 interface MeasurementFormProps {
   /** When provided, the form edits this existing measurement instead of creating a new one. */
@@ -146,6 +215,18 @@ function MeasurementFormFields({
 
   const errors = validateMeasurementForm(values)
 
+  // Live WHO-classification success banner (task 7 scope item 6): computed
+  // straight from `bpClassification` — no duplicated classification logic —
+  // once both pressure fields are filled in and currently valid.
+  const hasValidPressureValues =
+    values.systolic !== '' &&
+    values.diastolic !== '' &&
+    !errors.systolic &&
+    !errors.diastolic
+  const liveClassification = hasValidPressureValues
+    ? bpClassification(Number(values.systolic), Number(values.diastolic))
+    : null
+
   function fieldError(field: keyof MeasurementFormValues): string | undefined {
     return touched[field] || submitted ? errors[field] : undefined
   }
@@ -216,9 +297,15 @@ function MeasurementFormFields({
 
   return (
     <section aria-labelledby={headingId}>
-      <h1 id={headingId} className="text-2xl font-bold text-ink">
-        {isEditMode ? 'Edit measurement' : 'Add measurement'}
-      </h1>
+      <PageHeader
+        headingId={headingId}
+        title={isEditMode ? 'Edit measurement' : 'Add measurement'}
+        subtitle={
+          isEditMode
+            ? 'Update this reading'
+            : 'Enter your systolic, diastolic, and pulse readings'
+        }
+      />
 
       <form noValidate onSubmit={handleSubmit} className="mt-6 space-y-5">
         {formError && (
@@ -230,93 +317,56 @@ function MeasurementFormFields({
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="systolic">Systolic (mmHg)</Label>
-            <Input
-              id="systolic"
-              name="systolic"
-              type="number"
-              inputMode="numeric"
-              min={SYSTOLIC_RANGE.min}
-              max={SYSTOLIC_RANGE.max}
-              className="mt-1"
-              value={values.systolic}
-              onChange={(event) => handleChange('systolic', event.target.value)}
-              onBlur={() => handleBlur('systolic')}
-              aria-invalid={Boolean(fieldError('systolic'))}
-              aria-describedby={
-                fieldError('systolic') ? 'systolic-error' : undefined
-              }
-              required
-            />
-            {fieldError('systolic') && (
-              <p
-                id="systolic-error"
-                role="alert"
-                className="mt-1 text-sm text-red-600"
-              >
-                {fieldError('systolic')}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Label htmlFor="diastolic">Diastolic (mmHg)</Label>
-            <Input
-              id="diastolic"
-              name="diastolic"
-              type="number"
-              inputMode="numeric"
-              min={DIASTOLIC_RANGE.min}
-              max={DIASTOLIC_RANGE.max}
-              className="mt-1"
-              value={values.diastolic}
-              onChange={(event) =>
-                handleChange('diastolic', event.target.value)
-              }
-              onBlur={() => handleBlur('diastolic')}
-              aria-invalid={Boolean(fieldError('diastolic'))}
-              aria-describedby={
-                fieldError('diastolic') ? 'diastolic-error' : undefined
-              }
-              required
-            />
-            {fieldError('diastolic') && (
-              <p
-                id="diastolic-error"
-                role="alert"
-                className="mt-1 text-sm text-red-600"
-              >
-                {fieldError('diastolic')}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor="pulse">Pulse (bpm)</Label>
-          <Input
-            id="pulse"
-            name="pulse"
-            type="number"
-            inputMode="numeric"
-            min={PULSE_RANGE.min}
-            max={PULSE_RANGE.max}
-            className="mt-1"
-            value={values.pulse}
-            onChange={(event) => handleChange('pulse', event.target.value)}
-            onBlur={() => handleBlur('pulse')}
-            aria-invalid={Boolean(fieldError('pulse'))}
-            aria-describedby={fieldError('pulse') ? 'pulse-error' : undefined}
-            required
+        <div className="grid grid-cols-2 gap-3">
+          <NumericField
+            id="systolic"
+            label="Systolic"
+            unit="mmHg"
+            range={SYSTOLIC_RANGE}
+            value={values.systolic}
+            error={fieldError('systolic')}
+            onChange={(value) => handleChange('systolic', value)}
+            onBlur={() => handleBlur('systolic')}
           />
-          {fieldError('pulse') && (
-            <p id="pulse-error" role="alert" className="mt-1 text-sm text-red-600">
-              {fieldError('pulse')}
-            </p>
-          )}
+          <NumericField
+            id="diastolic"
+            label="Diastolic"
+            unit="mmHg"
+            range={DIASTOLIC_RANGE}
+            value={values.diastolic}
+            error={fieldError('diastolic')}
+            onChange={(value) => handleChange('diastolic', value)}
+            onBlur={() => handleBlur('diastolic')}
+          />
         </div>
+
+        <NumericField
+          id="pulse"
+          label="Pulse"
+          unit="bpm"
+          range={PULSE_RANGE}
+          value={values.pulse}
+          error={fieldError('pulse')}
+          onChange={(value) => handleChange('pulse', value)}
+          onBlur={() => handleBlur('pulse')}
+        />
+
+        {liveClassification && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium"
+            style={{
+              backgroundColor: CATEGORY_BADGE_STYLES[liveClassification.category].bg,
+              color: CATEGORY_BADGE_STYLES[liveClassification.category].text,
+            }}
+          >
+            <CheckCircleIcon className="h-4 w-4 shrink-0" />
+            <span>
+              Blood pressure: {CATEGORY_LABELS[liveClassification.category]} (
+              {values.systolic}/{values.diastolic})
+            </span>
+          </div>
+        )}
 
         <div>
           <Label htmlFor="timestamp">Date &amp; time</Label>
