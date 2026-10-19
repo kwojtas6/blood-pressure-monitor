@@ -7,11 +7,44 @@
       name="description"
       content="A simple place to keep track of your blood pressure readings."
     />
-    <meta name="theme-color" content="#f4f7f6" />
+    <!--
+      Content-Security-Policy via <meta http-equiv>: the strongest option
+      available to a plain static Vite build with no documented hosting
+      target (no server config to attach real HTTP headers to — see
+      ai/tasks/06-pwa-and-polish.md). Real limitations of this approach,
+      documented here rather than discovered later:
+        - frame-ancestors, sandbox, and report-to/report-uri are silently
+          ignored when delivered via <meta> (CSP spec requires an HTTP
+          header for those directives) — framing protection would need
+          X-Frame-Options or a real CSP header from whatever host this is
+          eventually deployed behind.
+        - Only a single policy applies; <meta> CSP cannot be merged in the
+          additive way multiple HTTP headers are.
+        - style-src allows 'unsafe-inline' deliberately: Radix/shadcn-ui
+          (and this app's own category-color swatches) position/color
+          elements via runtime-computed inline `style` attributes, which
+          cannot carry a nonce. This is a documented, low-risk exception
+          (ai/instructions/bp-monitor-spec.md §7.2) — not an oversight.
+      A host that can set real headers (Netlify, Cloudflare Pages, etc.)
+      should prefer public/_headers or equivalent server config instead,
+      which doesn't have the frame-ancestors/report-to limitation.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';"
+    />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
+    <meta name="theme-color" content="#1A3A5C" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="BP Monitor" />
     <title>Blood Pressure Monitor</title>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
