@@ -1,7 +1,7 @@
-import { useEffect, useId, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router'
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useLocation, useNavigate } from 'react-router'
 import { useMeasurements } from '../store/useMeasurements'
-import type { Measurement } from '../types'
+import type { Category, Measurement } from '../types'
 import type { MeasurementInput } from '../store/useMeasurements'
 import {
   bpClassification,
@@ -21,17 +21,25 @@ import {
   validateMeasurementForm,
   type MeasurementFormValues,
 } from '../utils/measurementValidation'
-import { CheckCircleIcon } from './icons'
-import PageHeader from './PageHeader'
+import { AlertCircleIcon, CheckCircleIcon, ChevronLeftIcon, MinusIcon, PlusIcon } from './icons'
+import PageHeader, { HeaderButton } from './PageHeader'
 import { Button } from './ui/button'
-import { Input } from './ui/input'
 import { Label } from './ui/label'
 
-interface NumericFieldProps {
+/** Small uppercase field label used throughout the form (layouts v2). */
+const FIELD_LABEL_CLASSES = 'text-[11px] font-medium tracking-wide text-muted uppercase'
+
+/** Shared look of the form's inset input rows. */
+const INSET_ROW_CLASSES =
+  'rounded-md border border-border-strong/60 bg-surface-inset focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/40'
+
+interface StepperFieldProps {
   id: 'systolic' | 'diastolic' | 'pulse'
   label: string
   unit: string
   range: { min: number; max: number }
+  /** Value the first −/+ press fills in when the field is still empty. */
+  startValue: number
   value: string
   error?: string
   onChange: (value: string) => void
@@ -39,54 +47,101 @@ interface NumericFieldProps {
 }
 
 /**
- * Large-value card treatment for a numeric reading field
- * (`ai/instructions/ui-mockup-reference.md` §3/§4, task 7 Decision 3): a
- * real `<input type="number">` with its existing label/validation wiring
- * untouched, just restyled (bigger value text, a unit suffix, a min/max
- * caption) — not a custom tap-to-edit widget. Factored out since the same
- * shape repeats for systolic/diastolic/pulse.
+ * −/+ stepper around a real `<input type="number">` (layouts v2
+ * `02-formularz.html`). The input keeps its label/validation wiring and can
+ * still be typed into; the buttons step by 1 within the allowed range, and
+ * the first press on an empty field fills in a typical value instead.
  */
-function NumericField({
+function StepperField({
   id,
   label,
   unit,
   range,
+  startValue,
   value,
   error,
   onChange,
   onBlur,
-}: NumericFieldProps) {
+}: StepperFieldProps) {
+  const current = value.trim() === '' ? Number.NaN : Number(value)
+
+  function step(delta: number) {
+    const next = Number.isFinite(current)
+      ? Math.min(range.max, Math.max(range.min, Math.round(current) + delta))
+      : startValue
+    onChange(String(next))
+    onBlur()
+  }
+
+  const buttonClasses =
+    'flex h-full w-[52px] shrink-0 items-center justify-center bg-surface text-accent transition-colors hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none disabled:opacity-40'
+
   return (
-    <div className="rounded-md bg-surface-inset p-3">
-      <Label htmlFor={id}>{label}</Label>
-      <div className="mt-1 flex items-baseline gap-2">
-        <Input
+    <div>
+      <Label htmlFor={id} className={FIELD_LABEL_CLASSES}>
+        {label} <span className="sr-only">({unit})</span>
+      </Label>
+      <div className={`mt-2 flex h-[52px] items-stretch overflow-hidden ${INSET_ROW_CLASSES}`}>
+        <button
+          type="button"
+          className={`${buttonClasses} border-r border-border`}
+          aria-label={`Decrease ${label.toLowerCase()}`}
+          disabled={Number.isFinite(current) && current <= range.min}
+          onClick={() => step(-1)}
+        >
+          <MinusIcon className="h-5 w-5" />
+        </button>
+        <input
           id={id}
           name={id}
           type="number"
           inputMode="numeric"
           min={range.min}
           max={range.max}
-          className="h-auto w-full border-0 bg-transparent p-0 text-[22px] font-medium shadow-none"
+          placeholder="–"
+          className="w-full min-w-0 bg-transparent text-center text-[26px] font-medium text-accent outline-none placeholder:text-muted [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onBlur={onBlur}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${id}-error` : undefined}
+          aria-describedby={`${id}-hint${error ? ` ${id}-error` : ''}`}
           required
         />
-        <span className="shrink-0 text-sm text-muted">{unit}</span>
+        <button
+          type="button"
+          className={`${buttonClasses} border-l border-border`}
+          aria-label={`Increase ${label.toLowerCase()}`}
+          disabled={Number.isFinite(current) && current >= range.max}
+          onClick={() => step(1)}
+        >
+          <PlusIcon className="h-5 w-5" />
+        </button>
       </div>
-      <p className="mt-1 text-xs text-muted">
-        Range: {range.min}–{range.max} {unit}
+      <p id={`${id}-hint`} className="mt-1 flex justify-between text-[11px] text-muted">
+        <span>min {range.min} {unit}</span>
+        <span>max {range.max} {unit}</span>
       </p>
       {error && (
-        <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-red-600">
+        <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-red-700">
           {error}
         </p>
       )}
     </div>
   )
+}
+
+/** White card wrapper for a group of form fields. */
+function FormCard({ children }: { children: ReactNode }) {
+  return <div className="space-y-4 rounded-lg border border-border bg-surface p-3.5">{children}</div>
+}
+
+const NORMAL_RANGE: ReadonlySet<Category> = new Set(['OPTIMAL', 'NORMAL'])
+
+function classificationMessage(category: Category, systolic: string, diastolic: string): string {
+  const reading = `${systolic}/${diastolic} mmHg`
+  if (NORMAL_RANGE.has(category)) return `${reading} is within the WHO normal range`
+  if (category === 'ELEVATED') return `${reading} is above the WHO normal range`
+  return `${reading} is in the WHO hypertension range`
 }
 
 interface MeasurementFormProps {
@@ -157,15 +212,11 @@ function MeasurementForm({ measurementId }: MeasurementFormProps) {
   if (isEditMode && !existing) {
     return (
       <section aria-labelledby="measurement-not-found-heading">
-        <h1
-          id="measurement-not-found-heading"
-          className="text-2xl font-bold text-ink"
-        >
-          Measurement not found
-        </h1>
-        <p className="mt-2 text-muted">
-          This measurement may have already been deleted.
-        </p>
+        <PageHeader
+          headingId="measurement-not-found-heading"
+          title="Measurement not found"
+          subtitle="This measurement may have already been deleted."
+        />
         <Button
           type="button"
           variant="secondary"
@@ -197,6 +248,8 @@ function MeasurementFormFields({
   existing,
 }: MeasurementFormFieldsProps) {
   const navigate = useNavigate()
+  const location = useLocation()
+  const timestampRef = useRef<HTMLInputElement>(null)
   const add = useMeasurements((state) => state.add)
   const update = useMeasurements((state) => state.update)
   const remove = useMeasurements((state) => state.remove)
@@ -226,6 +279,28 @@ function MeasurementFormFields({
   const liveClassification = hasValidPressureValues
     ? bpClassification(Number(values.systolic), Number(values.diastolic))
     : null
+
+  /** Header "‹ Back": previous in-app screen, or the dashboard on a direct load. */
+  function goBack() {
+    if (location.key === 'default') navigate('/')
+    else navigate(-1)
+  }
+
+  function cancel() {
+    navigate('/history')
+  }
+
+  /** "Change" next to the date: open the native picker where supported, else focus the input. */
+  function openDatePicker() {
+    const input = timestampRef.current
+    if (!input) return
+    input.focus()
+    try {
+      input.showPicker?.()
+    } catch {
+      // showPicker can throw (e.g. not allowed in this context); focus is enough.
+    }
+  }
 
   function fieldError(field: keyof MeasurementFormValues): string | undefined {
     return touched[field] || submitted ? errors[field] : undefined
@@ -295,148 +370,177 @@ function MeasurementFormFields({
     }
   }
 
+  const liveBadge = liveClassification ? CATEGORY_BADGE_STYLES[liveClassification.category] : null
+  const LiveIcon =
+    liveClassification && NORMAL_RANGE.has(liveClassification.category) ? CheckCircleIcon : AlertCircleIcon
+
   return (
     <section aria-labelledby={headingId}>
       <PageHeader
         headingId={headingId}
-        title={isEditMode ? 'Edit measurement' : 'Add measurement'}
-        subtitle={
-          isEditMode
-            ? 'Update this reading'
-            : 'Enter your systolic, diastolic, and pulse readings'
+        title={isEditMode ? 'Edit measurement' : 'New measurement'}
+        subtitle={isEditMode ? 'Update this blood pressure reading' : 'Enter your blood pressure reading'}
+        leading={
+          <HeaderButton onClick={goBack} disabled={isSubmitting}>
+            <ChevronLeftIcon className="-ml-1 h-4 w-4" /> Back
+          </HeaderButton>
+        }
+        trailing={
+          <HeaderButton onClick={cancel} disabled={isSubmitting}>
+            Cancel
+          </HeaderButton>
         }
       />
 
-      <form noValidate onSubmit={handleSubmit} className="mt-6 space-y-5">
+      <form noValidate onSubmit={handleSubmit} className="mt-3 space-y-3">
         {formError && (
-          <p
-            role="alert"
-            className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"
-          >
+          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
             {formError}
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <NumericField
+        <FormCard>
+          <StepperField
             id="systolic"
-            label="Systolic"
+            label="Systolic pressure"
             unit="mmHg"
             range={SYSTOLIC_RANGE}
+            startValue={120}
             value={values.systolic}
             error={fieldError('systolic')}
             onChange={(value) => handleChange('systolic', value)}
             onBlur={() => handleBlur('systolic')}
           />
-          <NumericField
+          <StepperField
             id="diastolic"
-            label="Diastolic"
+            label="Diastolic pressure"
             unit="mmHg"
             range={DIASTOLIC_RANGE}
+            startValue={80}
             value={values.diastolic}
             error={fieldError('diastolic')}
             onChange={(value) => handleChange('diastolic', value)}
             onBlur={() => handleBlur('diastolic')}
           />
-        </div>
+          <StepperField
+            id="pulse"
+            label="Pulse"
+            unit="bpm"
+            range={PULSE_RANGE}
+            startValue={70}
+            value={values.pulse}
+            error={fieldError('pulse')}
+            onChange={(value) => handleChange('pulse', value)}
+            onBlur={() => handleBlur('pulse')}
+          />
+        </FormCard>
 
-        <NumericField
-          id="pulse"
-          label="Pulse"
-          unit="bpm"
-          range={PULSE_RANGE}
-          value={values.pulse}
-          error={fieldError('pulse')}
-          onChange={(value) => handleChange('pulse', value)}
-          onBlur={() => handleBlur('pulse')}
-        />
-
-        {liveClassification && (
-          <div
-            role="status"
-            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium"
-            style={{
-              backgroundColor: CATEGORY_BADGE_STYLES[liveClassification.category].bg,
-              color: CATEGORY_BADGE_STYLES[liveClassification.category].text,
-            }}
-          >
-            <CheckCircleIcon className="h-4 w-4 shrink-0" />
-            <span>
-              Blood pressure: {CATEGORY_LABELS[liveClassification.category]} (
-              {values.systolic}/{values.diastolic})
-            </span>
+        <FormCard>
+          <div>
+            <Label htmlFor="timestamp" className={FIELD_LABEL_CLASSES}>
+              Date &amp; time
+            </Label>
+            <div className={`mt-2 flex h-11 items-center gap-2 px-3.5 ${INSET_ROW_CLASSES}`}>
+              <input
+                ref={timestampRef}
+                id="timestamp"
+                name="timestamp"
+                type="datetime-local"
+                className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none [&::-webkit-calendar-picker-indicator]:hidden"
+                value={values.timestamp}
+                onChange={(event) => handleChange('timestamp', event.target.value)}
+                onBlur={() => handleBlur('timestamp')}
+                aria-invalid={Boolean(fieldError('timestamp'))}
+                aria-describedby={fieldError('timestamp') ? 'timestamp-error' : undefined}
+                required
+              />
+              <button
+                type="button"
+                onClick={openDatePicker}
+                className="shrink-0 rounded-sm text-xs font-medium text-accent hover:underline focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+              >
+                Change<span className="sr-only"> date and time</span>
+              </button>
+            </div>
+            {fieldError('timestamp') && (
+              <p id="timestamp-error" role="alert" className="mt-1 text-sm text-red-700">
+                {fieldError('timestamp')}
+              </p>
+            )}
           </div>
-        )}
 
-        <div>
-          <Label htmlFor="timestamp">Date &amp; time</Label>
-          <Input
-            id="timestamp"
-            name="timestamp"
-            type="datetime-local"
-            className="mt-1"
-            value={values.timestamp}
-            onChange={(event) => handleChange('timestamp', event.target.value)}
-            onBlur={() => handleBlur('timestamp')}
-            aria-invalid={Boolean(fieldError('timestamp'))}
-            aria-describedby={
-              fieldError('timestamp') ? 'timestamp-error' : undefined
-            }
-            required
-          />
-          {fieldError('timestamp') && (
-            <p
-              id="timestamp-error"
-              role="alert"
-              className="mt-1 text-sm text-red-600"
+          <div>
+            <Label htmlFor="note" className={FIELD_LABEL_CLASSES}>
+              Note (optional)
+            </Label>
+            <textarea
+              id="note"
+              name="note"
+              maxLength={NOTE_MAX_LENGTH}
+              rows={3}
+              placeholder="e.g. after exercise, in the morning before breakfast…"
+              className={`mt-2 block min-h-[72px] w-full px-3.5 py-3 text-sm text-ink outline-none placeholder:text-muted ${INSET_ROW_CLASSES}`}
+              value={values.note}
+              onChange={(event) => handleChange('note', event.target.value)}
+              onBlur={() => handleBlur('note')}
+              aria-invalid={Boolean(fieldError('note'))}
+              aria-describedby={fieldError('note') ? 'note-error' : undefined}
+            />
+            {fieldError('note') && (
+              <p id="note-error" role="alert" className="mt-1 text-sm text-red-700">
+                {fieldError('note')}
+              </p>
+            )}
+          </div>
+        </FormCard>
+
+        {/* Live WHO classification (computed by `bpClassification`, no duplicated logic). */}
+        <div role="status" aria-live="polite">
+          {liveClassification && liveBadge && (
+            <div
+              className="flex items-center gap-2.5 rounded-md border px-3.5 py-2.5"
+              style={{
+                backgroundColor: liveBadge.bg,
+                color: liveBadge.text,
+                borderColor: `color-mix(in srgb, ${liveBadge.text} 35%, transparent)`,
+              }}
             >
-              {fieldError('timestamp')}
-            </p>
+              <span
+                aria-hidden
+                className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-white"
+                style={{ backgroundColor: liveBadge.text }}
+              >
+                <LiveIcon className="h-4 w-4" strokeWidth={2.2} />
+              </span>
+              <div>
+                <p className="text-[13px] font-medium">
+                  Blood pressure: {CATEGORY_LABELS[liveClassification.category]}
+                </p>
+                <p className="text-[11px]">
+                  {classificationMessage(liveClassification.category, values.systolic, values.diastolic)}
+                </p>
+              </div>
+            </div>
           )}
         </div>
 
-        <div>
-          <Label htmlFor="note">Note (optional)</Label>
-          <textarea
-            id="note"
-            name="note"
-            maxLength={NOTE_MAX_LENGTH}
-            rows={3}
-            className="mt-1 flex w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-base text-ink shadow-xs outline-none placeholder:text-muted focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 aria-invalid:border-red-500 md:text-sm"
-            value={values.note}
-            onChange={(event) => handleChange('note', event.target.value)}
-            onBlur={() => handleBlur('note')}
-            aria-invalid={Boolean(fieldError('note'))}
-            aria-describedby={fieldError('note') ? 'note-error' : undefined}
-          />
-          {fieldError('note') && (
-            <p id="note-error" role="alert" className="mt-1 text-sm text-red-600">
-              {fieldError('note')}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Button type="submit" disabled={isSubmitting}>
+        <div className="space-y-2.5 pt-1">
+          <Button type="submit" size="lg" disabled={isSubmitting}>
             {isEditMode ? 'Save changes' : 'Save measurement'}
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={isSubmitting}
-            onClick={() => navigate('/history')}
-          >
+          <Button type="button" variant="outline" size="lg" disabled={isSubmitting} onClick={cancel}>
             Cancel
           </Button>
           {isEditMode && (
             <Button
               type="button"
-              variant="destructive"
+              variant="ghost"
+              size="lg"
+              className="text-red-700 hover:bg-red-50"
               disabled={isSubmitting}
-              className="ml-auto"
               onClick={handleDelete}
             >
-              Delete
+              Delete measurement
             </Button>
           )}
         </div>

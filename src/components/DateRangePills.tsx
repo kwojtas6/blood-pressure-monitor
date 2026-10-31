@@ -4,7 +4,7 @@ import { DATE_RANGE_OPTIONS, type DateRangeOption } from '../utils/dateRange'
 interface DateRangePillsProps {
   value: DateRangeOption
   onChange: (value: DateRangeOption) => void
-  /** Display/selection order. Defaults to `DATE_RANGE_OPTIONS`'s own order (7d/30d/90d/All). */
+  /** Display/selection order. Defaults to `DATE_RANGE_OPTIONS`'s own order (7/30/90 days, All). */
   options?: DateRangeOption[]
   /** Accessible name for the group, e.g. "Date range". */
   ariaLabel: string
@@ -13,9 +13,9 @@ interface DateRangePillsProps {
 
 /** Short visible label for the pill itself; the full `DATE_RANGE_OPTIONS` label (e.g. "Last 7 days") stays the button's accessible name via `aria-label`. */
 const SHORT_LABELS: Record<DateRangeOption, string> = {
-  '7': '7d',
-  '30': '30d',
-  '90': '90d',
+  '7': '7 days',
+  '30': '30 days',
+  '90': '90 days',
   all: 'All',
 }
 

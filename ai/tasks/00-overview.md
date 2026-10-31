@@ -13,8 +13,9 @@ Work through these tasks in order — each depends on the ones before it. One ta
 | 5 | [Export & sharing](05-export-and-sharing.md) | 4 |
 | 6 | [PWA & polish](06-pwa-and-polish.md) | 5 |
 | 7 | [Apply UI mockups](07-apply-ui-mockups.md) | 6 |
+| 8 | [Apply layouts v2](08-apply-layouts-v2.md) | 7 |
 
-Estimated total: 14–20 working days for one developer (per source spec); treat as relative sizing, not a deadline. Task 7 was added after Tasks 1–6 were implemented and reviewed — it's a presentation-layer pass against `ai/instructions/ui-mockup-reference.md`, not part of the original estimate.
+Estimated total: 14–20 working days for one developer (per source spec); treat as relative sizing, not a deadline. Task 7 was added after Tasks 1–6 were implemented and reviewed — it's a presentation-layer pass against `ai/instructions/ui-mockup-reference.md`, not part of the original estimate. Task 8 is a follow-up pass against three more detailed mockups (reference doc §6). It adds small UI features (steppers, search, day grouping, paging) on top of the restyle.
 
 ## Ground rules for every task
 
