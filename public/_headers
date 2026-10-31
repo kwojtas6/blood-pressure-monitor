@@ -1,0 +1,14 @@
+# Best-effort security headers for static hosts that read this file
+# (Netlify, Cloudflare Pages). Not all hosts honor it — GitHub Pages and
+# plain `vite preview`, for example, ignore it entirely, which is why
+# index.html also carries an equivalent <meta http-equiv="Content-Security-Policy">
+# as a fallback (see the comment there for what a <meta> CSP can't cover,
+# e.g. frame-ancestors). Whatever host this app is actually deployed behind,
+# prefer configuring these as real HTTP response headers there over relying
+# on this file.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
