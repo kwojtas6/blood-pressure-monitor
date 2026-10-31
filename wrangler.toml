@@ -1,0 +1,8 @@
+# Cloudflare Pages project config. Used by `npm run deploy` (wrangler direct
+# upload) and read by Pages' Git integration for the output directory.
+# Security headers live in public/_headers (copied into dist/); SPA deep links
+# (/history, /export, ...) fall through to index.html automatically because
+# dist/ has no top-level 404.html.
+name = "blood-pressure-monitor"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-10-01"
