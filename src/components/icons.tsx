@@ -106,3 +106,53 @@ export function CopyIcon(props: IconProps) {
     </svg>
   )
 }
+
+export function MinusIcon(props: IconProps) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M5 12h14" />
+    </svg>
+  )
+}
+
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="m15 5-7 7 7 7" />
+    </svg>
+  )
+}
+
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="m9 5 7 7-7 7" />
+    </svg>
+  )
+}
+
+export function SearchIcon(props: IconProps) {
+  return (
+    <svg {...baseProps(props)}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m15.5 15.5 4.5 4.5" />
+    </svg>
+  )
+}
+
+export function AlertCircleIcon(props: IconProps) {
+  return (
+    <svg {...baseProps(props)}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5v5.5M12 16.5h.01" />
+    </svg>
+  )
+}
+
+export function SortIcon(props: IconProps) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M8 4v16M4.5 7.5 8 4l3.5 3.5M16 20V4M12.5 16.5 16 20l3.5-3.5" />
+    </svg>
+  )
+}

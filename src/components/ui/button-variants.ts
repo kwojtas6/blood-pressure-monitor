@@ -19,12 +19,17 @@ export const buttonVariants = cva(
         default: 'bg-brand text-white hover:bg-brand/90',
         secondary:
           'border border-border-strong bg-surface text-ink hover:bg-accent-soft',
+        // Layouts v2 secondary action ("Cancel" on the form): accent text +
+        // accent border. #2E6DA4 on white 5.47:1, on #F0F4F8 4.95:1.
+        outline: 'border border-accent bg-transparent text-accent hover:bg-accent-soft',
         ghost: 'text-ink hover:bg-accent-soft',
         destructive: 'bg-red-600 text-white hover:bg-red-700',
       },
       size: {
         default: 'h-10 px-4 py-2',
         sm: 'h-8 px-3 text-sm',
+        // Full-width mockup buttons ("Save measurement", "+ Add measurement").
+        lg: 'h-12 w-full rounded-xl px-4 text-[15px]',
       },
     },
     defaultVariants: {

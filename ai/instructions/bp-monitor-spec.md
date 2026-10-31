@@ -23,7 +23,7 @@ All data is stored **locally in the browser (IndexedDB)** — no account, no ser
 |---|---|---|
 | Data entry | Measurement form | Fields: systolic (mmHg), diastolic (mmHg), pulse (bpm), optional note, date/time (auto-filled, editable) |
 | Data entry | Validation | Systolic 60–250 mmHg, diastolic 40–150 mmHg, pulse 30–200 bpm. Inline error messages. |
-| Data entry | Edit / delete | Edit or delete a saved measurement from the list |
+| Data entry | Edit / delete | Edit or delete a saved measurement from the list (tap an entry to open it for editing; delete is on the edit screen) |
 | Data view | Measurement list | Chronological list with date, time, values. Color-coded by WHO category. |
 | Data view | Line chart | Recharts chart, separate lines for systolic/diastolic/pulse. Date-range filter: 7 / 30 / 90 days / all. |
 | Data view | Stats | Mean, min, max per parameter for the selected period |
@@ -117,9 +117,9 @@ Bottom navigation bar on mobile, side menu on desktop.
 
 | Route | View |
 |---|---|
-| `/` | Dashboard — quick-entry shortcut + last 5 measurements + mini 7-day chart |
+| `/` | Dashboard — quick-entry shortcut + last 5 measurements + mini 7-day chart + 7-day averages |
 | `/add` | Add/edit measurement form |
-| `/history` | Full historical list, filterable and sortable |
+| `/history` | Full historical list, grouped by day, filterable, sortable and searchable (date or note) |
 | `/chart` | Line chart with stats panel and date-range selector |
 | `/export` | Export view: PDF, sharing, report preview |
 

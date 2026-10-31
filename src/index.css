@@ -4,13 +4,17 @@
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
 
-  --color-ink: #1b302b;
-  /* Darkened from the original #788883 (3.7:1 on white — fails WCAG AA's
-     4.5:1 for normal text, and this token is used for normal-size body
-     text throughout: timestamps, helper text, nav labels). #5a6b67 keeps
-     the same muted gray-green hue at 5.6:1 on white / 5.2:1 on
-     --color-background (task 6 accessibility pass). */
-  --color-muted: #5a6b67;
+  /* Layouts v2 (Downloads/files/0{1,2,3}-*.html): neutral scale moved from
+     the original gray-green to the mockups' cool gray-blue. Contrast:
+       ink   #111827 on --color-background #F0F4F8: 16.05:1
+       muted #5A6370 on white 6.08:1 / on #F0F4F8 5.50:1 — the mockups'
+             own #6B7280/#9CA3AF captions fail AA on #F0F4F8 (4.37:1 /
+             2.54:1), so every caption uses this token instead. */
+  --color-ink: #111827;
+  /* Used for normal-size body text throughout (timestamps, helper text,
+     nav labels), so it must clear WCAG AA's 4.5:1 on both white and
+     --color-background — see the numbers above. */
+  --color-muted: #5a6370;
   /* Task 7: repointed from the original green/teal theme (#226b5a /
      #e7f2ef) to the navy/blue brand palette in
      `ai/instructions/ui-mockup-reference.md` §2, per that doc's Decision 1
@@ -35,14 +39,15 @@
   --color-accent: #2e6da4;
   --color-accent-soft: #ebf2f8;
   --color-surface: #ffffff;
-  --color-border: #e3ebe8;
+  --color-border: #e5e7eb;
   /* Stronger border for interactive control boundaries (inputs, selects,
      secondary buttons) where the border is the only cue to the control's
      edges — WCAG 1.4.11 non-text contrast needs 3:1; the default
      --color-border is ~1.2:1 on white and is kept as-is for purely
      decorative card/table dividers. */
-  --color-border-strong: #879693;
-  --color-background: #f4f7f6;
+  /* #77818F: 3.95:1 on white, 3.57:1 on #F0F4F8 (layouts v2). */
+  --color-border-strong: #77818f;
+  --color-background: #f0f4f8;
 
   /* Task 7 brand tokens (`ai/instructions/ui-mockup-reference.md` §2). This
      navy is the PWA manifest's existing `theme_color`
@@ -56,17 +61,17 @@
   --color-series-pulse: #e57c3a;
   /* Inset/secondary surface for form-field and stat-box backgrounds (the
      mockup's `fake-input`/`stat-box` look) — distinct from `--color-surface`
-     (card background) by design, not by much contrast: 1.09:1 against white,
-     a decorative depth cue only. Text on it reuses the already-audited
-     --color-ink (12.8:1) / --color-muted (5.2:1) tokens, unchanged. */
-  --color-surface-inset: #f3f6f5;
+     (card background) by design, not by much contrast — a decorative depth
+     cue only. Layouts v2 makes it equal to --color-background, as in the
+     mockups. Text on it uses --color-ink (16.05:1) / --color-muted (5.50:1). */
+  --color-surface-inset: #f0f4f8;
 
   /* Task 7 radius scale (`ui-mockup-reference.md` §3): overrides Tailwind's
      built-in --radius-md/--radius-lg so every existing `rounded-md`/
      `rounded-lg` usage (buttons, inputs, selects, cards) picks up the
-     mockup's 10px/16px scale with no per-component class changes. */
+     mockups' 10px/14px scale with no per-component class changes. */
   --radius-md: 10px;
-  --radius-lg: 16px;
+  --radius-lg: 14px;
 }
 
 body {

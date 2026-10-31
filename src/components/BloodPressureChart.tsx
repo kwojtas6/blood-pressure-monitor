@@ -10,7 +10,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { Measurement } from '../types'
-import { SERIES } from '../utils/series'
+import { SERIES, type SeriesDefinition } from '../utils/series'
 
 interface BloodPressureChartProps {
   /** Measurements already scoped to the window to chart (e.g. by date range). */
@@ -25,6 +25,8 @@ interface BloodPressureChartProps {
    * accessible data table below is unaffected either way.
    */
   compact?: boolean
+  /** Which series to draw. Defaults to all three; the dashboard draws systolic/diastolic only (layouts v2). */
+  seriesKeys?: SeriesDefinition['key'][]
 }
 
 interface ChartPoint {
@@ -83,8 +85,12 @@ function BloodPressureChart({
   measurements,
   height = 260,
   compact = false,
+  seriesKeys,
 }: BloodPressureChartProps) {
   const captionId = useId()
+  const visibleSeries = seriesKeys
+    ? SERIES.filter((entry) => seriesKeys.includes(entry.key))
+    : SERIES
   const data = toChartData(measurements)
 
   if (data.length === 0) {
@@ -103,7 +109,7 @@ function BloodPressureChart({
             data={data}
             margin={{ top: 8, right: 12, left: 0, bottom: 8 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e3ebe8" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             {!compact && (
               <XAxis
                 dataKey="dateLabel"
@@ -120,8 +126,12 @@ function BloodPressureChart({
                 }
               />
             )}
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            {SERIES.map((series) => (
+            <Legend
+              iconType="circle"
+              iconSize={8}
+              wrapperStyle={{ fontSize: 11, color: 'var(--color-muted)' }}
+            />
+            {visibleSeries.map((series) => (
               <Line
                 key={series.key}
                 type="monotone"
@@ -145,32 +155,36 @@ function BloodPressureChart({
       </div>
 
       {/* Non-visual equivalent of the chart above: a plain data table. */}
-      <table className="sr-only">
-        <caption id={captionId}>
-          Blood pressure and pulse readings, in chronological order (shown
-          above as a line chart)
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Date &amp; time</th>
-            {SERIES.map((series) => (
-              <th scope="col" key={series.key}>
-                {series.label} ({series.unit})
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((point) => (
-            <tr key={point.timestamp}>
-              <th scope="row">{point.fullLabel}</th>
+      {/* sr-only goes on a wrapper: a <table> ignores the 1px width and would
+          widen the page (horizontal scroll on mobile). */}
+      <div className="sr-only">
+        <table>
+          <caption id={captionId}>
+            Blood pressure and pulse readings, in chronological order (shown
+            above as a line chart)
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Date &amp; time</th>
               {SERIES.map((series) => (
-                <td key={series.key}>{point[series.key]}</td>
+                <th scope="col" key={series.key}>
+                  {series.label} ({series.unit})
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((point) => (
+              <tr key={point.timestamp}>
+                <th scope="row">{point.fullLabel}</th>
+                {SERIES.map((series) => (
+                  <td key={series.key}>{point[series.key]}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   )
 }

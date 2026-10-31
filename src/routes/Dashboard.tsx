@@ -1,47 +1,36 @@
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import AverageStats from '../components/AverageStats'
 import BloodPressureChart from '../components/BloodPressureChart'
-import MeasurementList from '../components/MeasurementList'
+import CategoryBadge from '../components/CategoryBadge'
+import MeasurementRow from '../components/MeasurementRow'
 import PageHeader from '../components/PageHeader'
 import { buttonVariants } from '../components/ui/button-variants'
 import { useMeasurements } from '../store/useMeasurements'
-import { CATEGORY_BADGE_STYLES, CATEGORY_LABELS } from '../utils/bpClassification'
 import { filterByDateRange } from '../utils/dateRange'
+import { formatFullDate, formatRelativeDayTime, greeting } from '../utils/formatDate'
 
-/** Matches the format used by `MeasurementList`/`Export`'s own local copies — see those files for why this isn't centralized (plain display formatting, not shared business logic). */
-function formatDateTime(date: Date): { date: string; time: string } {
-  return {
-    date: date.toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }),
-    time: date.toLocaleTimeString(undefined, {
-      hour: '2-digit',
-      minute: '2-digit',
-    }),
-  }
-}
+/** Number of rows in the dashboard's "Recent entries" card (spec §6: last 5). */
+const RECENT_COUNT = 5
 
-/** Today's date as a greeting line, e.g. "Wednesday, October 18" (mockup's "Dzień dobry" + date header, translated and made live rather than a static/time-of-day greeting — task 7 Decision 4). */
-function todayGreeting(): string {
-  return new Date().toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  })
+/** White card with the mockups' small uppercase label. */
+function DashboardCard({ title, children, flush = false }: { title: string; children: ReactNode; flush?: boolean }) {
+  return (
+    <section className="overflow-hidden rounded-lg border border-border bg-surface">
+      <h2 className="px-3.5 pt-3.5 text-[11px] font-medium tracking-wide text-muted uppercase">{title}</h2>
+      <div className={flush ? 'mt-1' : 'px-3.5 pt-2.5 pb-3.5'}>{children}</div>
+    </section>
+  )
 }
 
 /**
- * Dashboard (spec §6 `/`): quick-entry shortcut, last 5 measurements, and a
- * 7-day trend chart. No date-range selector here — always scoped to the last
- * 7 days via `filterByDateRange`.
+ * Dashboard (spec §6 `/`, layouts v2 `01-dashboard.html`): greeting header,
+ * last reading, 7-day trend, 7-day averages, add button, and recent entries.
  */
 function Dashboard() {
   const measurements = useMeasurements((state) => state.measurements)
   const isLoading = useMeasurements((state) => state.isLoading)
   const load = useMeasurements((state) => state.load)
-  const remove = useMeasurements((state) => state.remove)
 
   useEffect(() => {
     load()
@@ -50,98 +39,77 @@ function Dashboard() {
   const hasAnyMeasurements = measurements.length > 0
   const recent = [...measurements]
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-    .slice(0, 5)
+    .slice(0, RECENT_COUNT)
   const last7Days = filterByDateRange(measurements, '7')
   const latest = recent[0]
-  const latestFormatted = latest ? formatDateTime(latest.timestamp) : null
 
   return (
-    <section aria-labelledby="dashboard-heading" className="space-y-6">
-      <PageHeader headingId="dashboard-heading" title="Dashboard" subtitle={todayGreeting()} />
+    <section aria-labelledby="dashboard-heading" className="space-y-3">
+      <PageHeader headingId="dashboard-heading" title={greeting()} subtitle={formatFullDate()} />
 
-      {isLoading && <p className="text-muted">Loading…</p>}
+      {isLoading && !hasAnyMeasurements && <p className="text-muted">Loading…</p>}
 
       {!isLoading && !hasAnyMeasurements && (
         <div className="rounded-lg border border-border bg-surface p-6 text-center">
           <p className="text-ink">No measurements recorded yet.</p>
-          <p className="mt-1 text-sm text-muted">
-            Log your first blood pressure reading to see it here.
-          </p>
-          <Link
-            to="/add"
-            className={buttonVariants({ className: 'mt-4' })}
-          >
+          <p className="mt-1 text-sm text-muted">Log your first blood pressure reading to see it here.</p>
+          <Link to="/add" className={buttonVariants({ className: 'mt-4' })}>
             Add your first measurement
           </Link>
         </div>
       )}
 
-      {!isLoading && hasAnyMeasurements && latest && latestFormatted && (
+      {hasAnyMeasurements && latest && (
         <>
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <h2 className="text-sm font-semibold tracking-wide text-muted uppercase">
-              Last reading
-            </h2>
-            <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-              <div className="flex items-baseline gap-1">
-                <span className="text-[28px] leading-none font-medium text-brand">
-                  {latest.systolic}
-                </span>
-                <span className="text-[28px] leading-none font-medium text-muted">/</span>
-                <span className="text-[28px] leading-none font-medium text-brand-accent">
-                  {latest.diastolic}
-                </span>
-                <span className="ml-1 text-sm text-muted">mmHg</span>
-              </div>
-              <span
-                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                style={{
-                  backgroundColor: CATEGORY_BADGE_STYLES[latest.category].bg,
-                  color: CATEGORY_BADGE_STYLES[latest.category].text,
-                }}
-              >
-                {CATEGORY_LABELS[latest.category]}
-              </span>
+          <DashboardCard title="Last reading">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[32px] leading-none font-medium text-brand">{latest.systolic}</span>
+              <span className="text-[22px] leading-none text-muted">/</span>
+              <span className="text-[32px] leading-none font-medium text-brand-accent">{latest.diastolic}</span>
+              <span className="text-xs text-muted">mmHg</span>
+              <CategoryBadge category={latest.category} className="ml-auto self-center" />
             </div>
-            <p className="mt-1 text-sm text-muted">
-              {latestFormatted.date} &middot; {latestFormatted.time} &middot; pulse{' '}
-              {latest.pulse} bpm
+            <p className="mt-2 text-[11px] text-muted">
+              {formatRelativeDayTime(latest.timestamp)} · pulse {latest.pulse} bpm
             </p>
-          </div>
+          </DashboardCard>
 
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <h2 className="text-sm font-semibold tracking-wide text-muted uppercase">
-              7-day trend
-            </h2>
-            <div className="mt-3">
-              <BloodPressureChart measurements={last7Days} height={140} compact />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-ink">
-                Recent measurements
-              </h2>
-              <Link to="/history" className="text-sm text-accent underline">
-                View all
-              </Link>
-            </div>
-            <MeasurementList
-              measurements={recent}
-              onDelete={remove}
-              variant="compact"
-              ariaLabel="Last 5 measurements"
-              className="mt-3"
+          <DashboardCard title="Trend — last 7 days">
+            <BloodPressureChart
+              measurements={last7Days}
+              height={130}
+              compact
+              seriesKeys={['systolic', 'diastolic']}
             />
-          </div>
+          </DashboardCard>
 
-          <Link
-            to="/add"
-            className={buttonVariants({ className: 'w-full' })}
-          >
+          {last7Days.length > 0 && (
+            <DashboardCard title="Statistics — 7 days">
+              <AverageStats measurements={last7Days} />
+            </DashboardCard>
+          )}
+
+          <Link to="/add" className={buttonVariants({ size: 'lg' })}>
             + Add measurement
           </Link>
+
+          <DashboardCard title="Recent entries" flush>
+            <ol aria-label={`Last ${RECENT_COUNT} measurements`}>
+              {recent.map((measurement) => (
+                <MeasurementRow
+                  key={measurement.id}
+                  measurement={measurement}
+                  when={formatRelativeDayTime(measurement.timestamp)}
+                />
+              ))}
+            </ol>
+            <Link
+              to="/history"
+              className="block border-t border-border px-3.5 py-2.5 text-center text-[13px] font-medium text-accent hover:bg-surface-inset"
+            >
+              View all history
+            </Link>
+          </DashboardCard>
         </>
       )}
     </section>
